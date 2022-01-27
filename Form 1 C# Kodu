@@ -1,0 +1,359 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Uzunluk_girme_ve_gosterme
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+        static string connection_string = @"Server = BAYRAM\WINCC ; Initial Catalog = Factory ; user= sa; Password = 123456";
+        public string Birim;
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Birim = "+1";
+
+            if (textBox1.Text == "" || textBox4.Text == "")
+            {
+                MessageBox.Show("Tüm Bölümleri Doldurmanız Gerekiyor");
+            }
+            else
+            {
+                YeniTablo();  // t_veri tablosuna giriş çıkış yapma
+                Veri();
+                İslemTablo();
+            }
+        }
+        private void button3_Click(object sender, EventArgs e)
+        {
+            using (SqlConnection conn = new SqlConnection(connection_string))
+            {
+                conn.Open();
+                string sorgu3 = "select stokid,stokadi,birim,Sayilmadurum from t_stok where stokid like '310-017%'";
+                using (SqlCommand cmnd = new SqlCommand(sorgu3, conn))
+                {
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        while (read.Read())
+                        {
+                            dataGridView3.Columns.Clear();
+                            for (int i = 0; i < read.FieldCount; i++)
+                            {
+                                dataGridView3.Columns.Add(read.GetName(i), read.GetName(i));
+                            }
+                        }
+                    }
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        if (read.HasRows)
+                        {
+                            dataGridView3.Rows.Clear();
+                            while (read.Read())
+                            {
+                                dataGridView3.Rows.Add();
+
+                                for (int i = 0; i < read.FieldCount; i++)
+                                {
+                                    dataGridView3.Rows[dataGridView3.RowCount - 2].Cells[read.GetName(i)].Value = read[read.GetName(i)].ToString();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        private void Veri()
+        {
+            string stokid = dataGridView3.SelectedRows[0].Cells["stokid"].Value.ToString();
+            using (SqlConnection conn = new SqlConnection(connection_string))
+            {
+                conn.Open();
+                string sorgu = "select *from t_Veri WHERE [Stok id]='" + stokid + "'";
+                using (SqlCommand cmnd = new SqlCommand(sorgu, conn))
+                {
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        dataGridView1.Columns.Clear();
+                        if (read.HasRows)
+                        {
+                            for (int i = 0; i < read.FieldCount; i++)
+                            {
+                                dataGridView1.Columns.Add(read.GetName(i), read.GetName(i));
+                            }
+
+                            while (read.Read())
+                            {
+                                dataGridView1.Rows.Add();
+
+                                for (int i = 0; i < read.FieldCount; i++)
+                                {
+                                    dataGridView1.Rows[dataGridView1.RowCount - 2].Cells[read.GetName(i)].Value = read[read.GetName(i)].ToString();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        private void YeniTablo()
+        {
+            string stokid = dataGridView3.SelectedRows[0].Cells["stokid"].Value.ToString();
+            using (SqlConnection conn = new SqlConnection(connection_string))
+            {
+                conn.Open();
+                string sorgu2 =
+                    "insert into t_Veri ([Stok id],[Uzunluk (m)],[Hareket Adet], Hareket, kullanici_adi, tarih) values ('"
+                    + stokid + "'," + textBox1.Text.Replace(',', '.') + "," + Birim + "," + textBox2.Text + ",'"
+                    + textBox4.Text + "', CONVERT(varchar,GETDATE(),22))";
+                using (SqlCommand cmnd = new SqlCommand(sorgu2, conn))
+                {
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        read.Read();
+                    }
+                }
+            }
+        }
+        private void textBox1_MouseHover(object sender, EventArgs e)
+        {
+            toolTip1.ToolTipTitle = "Açıklama!";
+            toolTip1.ToolTipIcon = ToolTipIcon.Info;
+            toolTip1.IsBalloon = true;
+            toolTip1.AutoPopDelay = 5000; // Mesajın açık kalma süresi
+            toolTip1.ReshowDelay = 3000; // Mouse çekildikten kaç ms sonra kaybolsun
+            toolTip1.SetToolTip(textBox1, "Uzunluk Degerini Giriniz");
+        }
+        private void textBox2_MouseHover(object sender, EventArgs e)
+        {
+            toolTip2.ToolTipTitle = "Açıklama!";
+            toolTip2.ToolTipIcon = ToolTipIcon.Info;
+            toolTip2.IsBalloon = true;
+            toolTip2.AutoPopDelay = 5000; // Mesajın açık kalma süresi
+            toolTip2.ReshowDelay = 3000; // Mouse çekildikten kaç ms sonra kaybolsun
+            toolTip2.SetToolTip(textBox2, "Kac Adet Malzeme Giriş ya da Cikis Yapacaksiniz");
+        }
+        private void textBox4_MouseHover(object sender, EventArgs e)
+        {
+            toolTip4.ToolTipTitle = "Açıklama!";
+            toolTip4.ToolTipIcon = ToolTipIcon.Info;
+            toolTip4.IsBalloon = true;
+            toolTip4.AutoPopDelay = 5000; // Mesajın açık kalma süresi
+            toolTip4.ReshowDelay = 3000; // Mouse çekildikten kaç ms sonra kaybolsun
+            toolTip4.SetToolTip(textBox4, "Ad ve Soyadinizi Giriniz");
+        }
+        private void textBox1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            e.Handled = !char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar) && e.KeyChar != ',';
+        }
+        private void textBox2_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            e.Handled = !char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar);
+        }
+        private void textBox4_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            e.Handled = !char.IsLetter(e.KeyChar) && !char.IsControl(e.KeyChar) && !char.IsSeparator(e.KeyChar);
+        }
+        private void button4_Click(object sender, EventArgs e)
+        {
+            DialogResult dialogResult = MessageBox.Show("Son İşleminizi Silmek İstediğinize Emin Misiniz ??", " İŞLEM SİLME ", MessageBoxButtons.YesNo);
+            if (dialogResult == DialogResult.Yes)
+            {
+                using (SqlConnection conn = new SqlConnection(connection_string))
+                {
+                    conn.Open();
+                    string sorgu5 =
+                    " declare @sayi  int; " +
+                    " select @sayi = MAX(Id) from t_Veri " +
+                    " Delete  from t_Veri where Id = @sayi";
+                    using (SqlCommand cmnd = new SqlCommand(sorgu5, conn))
+                    {
+                        using (SqlDataReader read = cmnd.ExecuteReader())
+                        {
+                            read.Read();
+                        }
+                    }
+                }
+                Veri();
+                İslemTablo();
+                MessageBox.Show(" Son Eklediğiniz Silindi ");
+            }
+            else if (dialogResult == DialogResult.No)
+            {
+                MessageBox.Show("Başka İşlem Yapabilirsiniz ");
+            }
+        }
+        private void İslemTablo()
+        {
+            string stokid = dataGridView3.SelectedRows[0].Cells["stokid"].Value.ToString();
+            string Sayilmadurum = dataGridView3.SelectedRows[0].Cells["Sayilmadurum"].Value.ToString();
+            if (Sayilmadurum == "Sayilamaz")
+            {
+                using (SqlConnection conn = new SqlConnection(connection_string))
+                {
+                    conn.Open();
+                    string sorgu3 =
+                        "select [Stok id],[Uzunluk (m)] as Uzunluk ,SUM(Hareket *([Hareket Adet])) as adet " +
+                        "from t_Veri WHERE [Stok id]='" + stokid + "'" +
+                        "group by [Uzunluk (m)],[Stok id]  having SUM(Hareket *([Hareket Adet]))>0 ";
+                    using (SqlCommand cmnd = new SqlCommand(sorgu3, conn))
+                    {
+                        using (SqlDataReader read = cmnd.ExecuteReader())
+                        {
+                            dataGridView2.Columns.Clear();
+                            if (read.HasRows)
+                            {
+                                for (int i = 0; i < read.FieldCount; i++)
+                                {
+                                    dataGridView2.Columns.Add(read.GetName(i), read.GetName(i));
+                                }
+                                while (read.Read())
+                                {
+                                    dataGridView2.Rows.Add();
+
+                                    for (int i = 0; i < read.FieldCount; i++)
+                                    {
+                                        dataGridView2.Rows[dataGridView2.RowCount - 2].Cells[read.GetName(i)].Value = read[read.GetName(i)].ToString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                using (SqlConnection conn = new SqlConnection(connection_string))
+                {
+                    conn.Open();
+                    string sorgu3 =
+                    " select [Stok id] , SUM(Hareket*[Hareket Adet])  as adet from t_Veri WHERE [Stok id] = '" + stokid + "' group by [Stok id]";
+                    using (SqlCommand cmnd = new SqlCommand(sorgu3, conn))
+                    {
+                        using (SqlDataReader read = cmnd.ExecuteReader())
+                        {
+                            dataGridView2.Columns.Clear();
+                            if (read.HasRows)
+                            {
+                                for (int i = 0; i < read.FieldCount; i++)
+                                {
+                                    dataGridView2.Columns.Add(read.GetName(i), read.GetName(i));
+                                }
+                                while (read.Read())
+                                {
+                                    dataGridView2.Rows.Add();
+
+                                    for (int i = 0; i < read.FieldCount; i++)
+                                    {
+                                        dataGridView2.Rows[dataGridView2.RowCount - 2].Cells[read.GetName(i)].Value = read[read.GetName(i)].ToString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        private void button2_Click(object sender, EventArgs e)
+        {
+            Form2 f2 = new Form2();
+            Hide();
+            f2.ShowDialog();
+            Show();
+        }
+        private void button6_Click(object sender, EventArgs e)
+        {
+            this.Close();
+            Application.Exit();
+        }
+        private void dataGridView3_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            string stokid = dataGridView3.SelectedRows[0].Cells["stokid"].Value.ToString();
+            using (SqlConnection conn = new SqlConnection(connection_string))
+            {
+                conn.Open();
+                string sorgu2 = "select Sayilmadurum from t_stok where stokid like '" + stokid + "'";
+                using (SqlCommand cmnd = new SqlCommand(sorgu2, conn))
+                {
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        while (read.Read())
+                        {
+                            if (read[0].ToString() == "Sayilamaz")
+                            {
+                                label1.Text = "Uzunluk Giriniz";
+                                textBox1.Enabled = true;
+                                label1.Visible = true;
+                            }
+                            else
+                            {
+                                label2.Text = "Adet Giriniz";
+                                label1.Visible = false;
+                                textBox1.Text = "0";
+                                textBox1.Enabled = false;
+                            }
+                        }
+                    }
+                }
+            }
+            Veri();
+            İslemTablo();
+        }
+        private void button7_Click(object sender, EventArgs e)
+        {
+            Birim = "-1";
+            if (textBox1.Text == "" || textBox4.Text == "")
+            {
+                MessageBox.Show("Tüm Bölümleri Doldurmanız Gerekiyor");
+            }
+            else
+            {
+                Veri();
+                depo_kontrol();  // depodaki malzeme stokta var  mı kontrolü
+            }
+        }
+        private void depo_kontrol()
+        {
+            string stokid = dataGridView3.SelectedRows[0].Cells["stokid"].Value.ToString();
+            using (SqlConnection conn = new SqlConnection(connection_string))
+            {
+                conn.Open();
+                string sorgu5 =
+                " select " +
+                " case" +
+                " when  SUM(Hareket *([Hareket Adet])) - " + textBox2.Text.Replace(',', '.') + " < 0 then  0" +
+                " else 1" +
+                " end" +
+                " from t_Veri WHERE [Stok id] = '" + stokid + "' and [Uzunluk (m)] =" + textBox1.Text.Replace(',', '.') +
+                " group by[Uzunluk (m)],[Stok id] ";
+                using (SqlCommand cmnd = new SqlCommand(sorgu5, conn))
+                {
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        while (read.Read())
+                        {
+                            if (read[0].ToString() == "0")
+                            {
+                                MessageBox.Show("Depoda Yeterli Malzeme Yok ");
+                            }
+                            else
+                            {
+                                YeniTablo();
+                                İslemTablo();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
