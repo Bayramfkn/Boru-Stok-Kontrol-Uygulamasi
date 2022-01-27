@@ -1,0 +1,133 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Uzunluk_girme_ve_gosterme
+{
+    public partial class Form2 : Form
+    {
+        public Form2()
+        {
+            InitializeComponent();
+        }
+        static string connection_string = @"Server = BAYRAM\WINCC ; Initial Catalog = Factory ; user= sa; Password = 123456";
+        string birim;
+        private void button1_Click(object sender, EventArgs e)
+        {
+            using (SqlConnection conn = new SqlConnection(connection_string))
+            {
+                conn.Open();
+                string sorgu5 =
+                " declare @sayi  int; " +
+                " select @sayi = MAX(id) from t_Boru " +
+                " insert into t_Boru (id, Stok_id, Stok_adi, Birim) values(@sayi+1, '" + textBox1.Text + "','" + textBox2.Text + "', '" + birim + "')";
+                using (SqlCommand cmnd = new SqlCommand(sorgu5, conn))
+                {
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        while (read.Read())
+                        {
+                        }
+                    }
+                }
+            }
+            Tablo();
+        }
+        private void Tablo()
+        {
+            using (SqlConnection conn = new SqlConnection(connection_string))
+            {
+                conn.Open();
+                string sorgu = "select *from t_Boru";
+                using (SqlCommand cmnd = new SqlCommand(sorgu, conn))
+                {
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        while (read.Read())
+                        {
+                            dataGridView1.Columns.Clear();
+                            for (int i = 0; i < read.FieldCount; i++)
+                            {
+                                dataGridView1.Columns.Add(read.GetName(i), read.GetName(i));
+                            }
+                        }
+                    }
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        if (read.HasRows)
+                        {
+                            dataGridView1.Rows.Clear();
+                            while (read.Read())
+                            {
+                                dataGridView1.Rows.Add();
+
+                                for (int i = 0; i < read.FieldCount; i++)
+                                {
+                                    dataGridView1.Rows[dataGridView1.RowCount - 2].Cells[read.GetName(i)].Value = read[read.GetName(i)].ToString();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        private void button2_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+        private void textBox1_MouseHover(object sender, EventArgs e)
+        {
+            toolTip1.ToolTipTitle = "Açıklama!";
+            toolTip1.ToolTipIcon = ToolTipIcon.Info;
+            toolTip1.IsBalloon = true;
+            toolTip1.AutoPopDelay = 5000; // Mesajın açık kalma süresi
+            toolTip1.ReshowDelay = 3000; // Mouse çekildikten kaç ms sonra kaybolsun
+            toolTip1.SetToolTip(textBox1, "Stok id Giriniz !!");
+        }
+        private void textBox2_MouseHover(object sender, EventArgs e)
+        {
+            toolTip2.ToolTipTitle = "Açıklama!";
+            toolTip2.ToolTipIcon = ToolTipIcon.Info;
+            toolTip2.IsBalloon = true;
+            toolTip2.AutoPopDelay = 5000; // Mesajın açık kalma süresi
+            toolTip2.ReshowDelay = 3000; // Mouse çekildikten kaç ms sonra kaybolsun
+            toolTip2.SetToolTip(textBox2, "Stok Adi Giriniz !!");
+        }
+        private void button3_Click(object sender, EventArgs e)
+        {
+            using (SqlConnection conn = new SqlConnection(connection_string))
+            {
+                conn.Open();
+                string sorgu5 =
+                " declare @sayi  int; " +
+                " select @sayi = MAX(id) from t_Boru " +
+                " Delete  from t_Boru where id = @sayi";
+                using (SqlCommand cmnd = new SqlCommand(sorgu5, conn))
+                {
+                    using (SqlDataReader read = cmnd.ExecuteReader())
+                    {
+                        while (read.Read())
+                        {
+                        }
+                    }
+                }
+            }
+            Tablo();
+        }
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+            birim = "Adet";
+        }
+        private void radioButton2_CheckedChanged(object sender, EventArgs e)
+        {
+            birim = "Metre";
+        }
+    }
+}
